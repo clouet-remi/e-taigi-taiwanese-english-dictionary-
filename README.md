@@ -129,8 +129,6 @@ This gives the project a practical middle ground between simplicity and quality,
 |   `-- src/      # local dev orchestrator
 |-- data/
 |   `-- data.json # source dictionary dataset
-`-- .github/
-    `-- workflows/ci.yml
 ```
 
 ## Local Development
@@ -215,7 +213,6 @@ Default local URLs:
 - TypeScript across frontend and backend
 - API tests with Node's built-in test runner
 - frontend utility tests
-- GitHub Actions CI for API and client validation
 
 ## Deployment Notes
 
