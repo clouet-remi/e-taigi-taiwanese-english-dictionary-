@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model DictWord {
+  id         Int     @id @default(autoincrement()) @map("DictWordID")
+  pojUnicode String? @map("PojUnicode")
+  pojInput   String? @map("PojInput")
+  kipUnicode String? @map("KipUnicode")
+  kipInput   String? @map("KipInput")
+  hoaBun     String? @map("HoaBun")
+  engBun     String? @map("EngBun")
+  audioUrl   String? @map("AudioUrl")
+
+  @@index([hoaBun])
+  @@index([engBun])
+  @@map("DictWord")
+}

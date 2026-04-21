@@ -1,0 +1,23 @@
+{
+  "name": "taiwanese-dictionary-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --import tsx --test test/all.test.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "25.4.0",
+    "@types/react": "19.2.14",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3"
+  }
+}
