@@ -1,10 +1,12 @@
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
+import helmetModule from "helmet";
 import { searchHandler } from "./routes/search.ts";
 import { getApiConfig, createCorsOptions, type ApiConfig } from "./config.ts";
 import { createRateLimitMiddleware } from "./security.ts";
 import { logAndHandleError } from "./utils/error-handler.ts";
+
+const helmet = helmetModule as unknown as () => express.RequestHandler;
 
 export const createApp = (config: ApiConfig = getApiConfig()) => {
   const app = express();
