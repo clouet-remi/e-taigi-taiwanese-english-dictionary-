@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "prisma generate",
     "dev": "tsx src/index.ts",
     "test": "node --import tsx --test test/all.test.ts",
     "test:watch": "node --import tsx --test --watch test/all.test.ts",
