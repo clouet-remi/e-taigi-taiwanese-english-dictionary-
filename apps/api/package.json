@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "prisma generate",
+    "build": "prisma generate && esbuild src/handler.ts --bundle --platform=node --format=esm --outfile=api/index.js --external:@prisma/client",
     "dev": "tsx src/index.ts",
     "test": "node --import tsx --test test/all.test.ts",
     "test:watch": "node --import tsx --test --watch test/all.test.ts",
@@ -27,6 +27,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
     "prisma": "^6.19.2",
+    "esbuild": "^0.25.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }
