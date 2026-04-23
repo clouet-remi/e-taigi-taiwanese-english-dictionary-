@@ -229,6 +229,15 @@ Default local URLs:
 
 ## Roadmap
 
+### v1.x — Data & polish
 - Continue improving and correcting the underlying lexical dataset
-- Add user accounts
-- Let users build and manage personal vocabulary lists
+- Refine search ranking and edge case handling
+
+### v2 — User platform
+The next major iteration will turn E-Taigi into a full language-learning platform:
+
+- **User accounts** — authentication with session management and profile persistence
+- **Vocabulary lists** — create, organize, and review personal word collections
+- **Flashcard system** — spaced-repetition review mode built on top of saved lists
+- **Mobile application** — native iOS and Android app built with React Native, sharing the same API layer
+- **Offline support** — cached vocabulary lists accessible without an internet connection
