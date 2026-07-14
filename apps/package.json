@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx src/dev.ts",
-    "dev:fullstack": "tsx src/dev.ts",
+    "dev": "tsx scripts/dev.ts",
+    "dev:fullstack": "tsx scripts/dev.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {

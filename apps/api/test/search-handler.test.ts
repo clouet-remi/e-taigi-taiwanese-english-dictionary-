@@ -1,7 +1,7 @@
 import { beforeEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Request } from "express";
-import { searchHandler } from "../src/routes/search.ts";
+import { searchHandler } from "../src/search/handler.ts";
 import prisma from "../src/db.ts";
 import { createMockResponse } from "./helpers/mockResponse.ts";
 

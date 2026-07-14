@@ -1,77 +1,85 @@
 # E-Taigi
 
-> Taiwanese–English dictionary with Hanzi search, romanization, and audio playback.
+Taiwanese-English dictionary with Hanzi search, romanization, and audio playback.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org/)
 [![Express](https://img.shields.io/badge/Express-5-000000?logo=express)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?logo=postgresql&logoColor=white)](https://neon.tech/)
-[![Frontend on Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com/)
-[![API on Render](https://img.shields.io/badge/API-Render-46E3B7?logo=render&logoColor=white)](https://render.com/)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com/)
 
-**[Live demo → https://e-taigi-taiwanese-english-dictionar.vercel.app](https://e-taigi-taiwanese-english-dictionar.vercel.app)**
+Live demo: https://e-taigi-taiwanese-english-dictionar.vercel.app
 
-> The API runs on Render's free tier and may take **20–30 seconds** to respond after a period of inactivity (cold start). The first search after a long idle period may be slow — subsequent ones are instant.
-
----
-
-A full-stack dictionary application for the Taiwanese language, backed by **36,800 lexical entries** including romanization (POJ/KIP) and audio pronunciations. Built as both a practical language-learning tool and a demonstration of deliberate full-stack architecture decisions.
+E-Taigi is a full-stack dictionary application for Taiwanese, backed by about 36,800 lexical entries with POJ/KIP romanization and pronunciation audio.
 
 ## Features
 
-- **Dual search modes** — detects Hanzi and English input automatically, routing each to a dedicated SQL search path
-- **Ranked results** — exact → prefix → substring ordering implemented in raw SQL for full transparency and control
-- **Detail modal** — romanization (POJ/KIP) and native browser audio player per entry
-- **Debounced search** — 250 ms debounce keeps the experience responsive without unnecessary API calls
-- **Rate limiting** — in-memory per-IP rate limiter with standard `X-RateLimit-*` headers
-- **Security headers** — `helmet` middleware on the API layer
+- Dual search modes: Hanzi and English input are detected automatically.
+- Ranked results: exact, prefix, then substring matching.
+- Detail modal: romanization and native browser audio playback.
+- Debounced search: 250 ms debounce on the client.
+- Rate limiting: in-memory per-IP limiter on the API.
+- Security headers: API protected with `helmet`.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 16, React 19, App Router, vanilla CSS |
+| Frontend | Next.js 16, React 19, App Router, CSS |
 | Backend | Express 5, TypeScript |
 | ORM | Prisma 6 |
-| Database | PostgreSQL (Neon) |
+| Database | PostgreSQL on Neon |
 | Validation | Zod |
-| Deployment | Vercel (frontend + API as serverless functions) |
+| Deployment | Vercel for client and API |
 
 ## Architecture
 
-```
+```text
 .
-├── apps/
-│   ├── api/       # Express REST API — serverless entry via src/handler.ts
-│   ├── client/    # Next.js frontend
-│   └── src/       # local dev orchestrator (starts both apps together)
-└── data/
-    └── data.json  # source dictionary dataset (MKDict)
++-- apps/
+|   +-- api/       # Express REST API, serverless entry via src/handler.ts
+|   +-- client/    # Next.js frontend
+|   +-- scripts/   # project scripts launched from package.json files
++-- data/
+    +-- data.json  # source dictionary dataset
 ```
 
-### API surface
+### API Source Layout
 
+```text
+apps/api/src/
++-- app.ts                    # Express app factory
++-- config.ts                 # env parsing and CORS config
++-- db.ts                     # Prisma client
++-- handler.ts                # Vercel serverless export
++-- index.ts                  # local HTTP server
++-- middleware/
+|   +-- rate-limit.ts
++-- search/
+|   +-- handler.ts
++-- utils/
+    +-- audio-url.ts
+    +-- error-handler.ts
+    +-- search.ts
 ```
+
+The API has separate entry files on purpose:
+
+- `app.ts` builds and returns the Express app. It registers middleware, routes, and error handling, but does not call `listen()`.
+- `index.ts` is only for local development. It loads config, calls `createApp()`, starts the HTTP server, and handles shutdown signals.
+- `handler.ts` is only for Vercel. It exports the Express app without starting a server, because Vercel owns the request lifecycle.
+
+`db.ts` currently contains the shared Prisma client. If database code grows, the next clean step would be moving it to a more explicit path such as `src/database/prisma.ts`.
+
+### API Surface
+
+```text
 GET /api/health
 GET /api/search?q=<query>&limit=<1-50>
 ```
 
-The API layer is intentionally minimal. Search logic lives in raw SQL via Prisma tagged template literals, which keeps ranking rules explicit, easy to read, and easy to evolve without introducing an external search engine.
-
-### Search design
-
-For **Hanzi** queries the API searches `HoaBun` with `LIKE` and ranks results:
-
-1. Exact match
-2. Prefix match
-3. Substring match → then by string length, then lexically
-
-For **English** queries the input is first normalized (lowercased, diacritics stripped, punctuation cleaned) before the same three-tier ranking is applied against `LOWER(EngBun)`.
-
-### Frontend
-
-The client is a single-page shell: a search box, a live result list, and a detail modal. State is entirely local to `SearchClient` — no global state library. The `Header` component dispatches a custom event to reset search on logo click when already on the home route.
+Search logic uses Prisma raw SQL template literals. Hanzi queries search `HoaBun`; English queries are normalized and search `LOWER("EngBun")`.
 
 ## Local Development
 
@@ -79,124 +87,146 @@ The client is a single-page shell: a search box, a live result list, and a detai
 
 - Node.js 20+
 - npm 10+
-- A [Neon](https://neon.tech/) PostgreSQL database (free tier works)
+- A Neon PostgreSQL database
 
-### 1 — API
+### API
 
 ```bash
 cd apps/api
 npm install
-cp .env.example .env   # fill in DATABASE_URL and DIRECT_URL (see below)
+cp .env.example .env
 npm run prisma:generate
 npm run prisma:migrate
 npm run prisma:seed
+npm run dev
 ```
 
-`.env` variables:
+Important API env vars:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require"
-DIRECT_URL="postgresql://USER:PASSWORD@ep-xxxx.eu-west-2.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL="postgresql://USER:PASSWORD@ep-xxxx-pooler.eu-west-3.aws.neon.tech/neondb?sslmode=require"
+DIRECT_URL="postgresql://USER:PASSWORD@ep-xxxx.eu-west-3.aws.neon.tech/neondb?sslmode=require"
 PORT=4000
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN="http://localhost:3000,http://localhost:3003"
+TRUST_PROXY=false
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_MAX_REQUESTS=60
 ```
 
-> `DATABASE_URL` must point to the **pooler** endpoint (contains `-pooler`).  
-> `DIRECT_URL` must point to the **direct** endpoint (no `-pooler`).
+`DATABASE_URL` must use the Neon pooler host containing `-pooler`.
+`DIRECT_URL` must use the direct Neon host without `-pooler`.
 
-### 2 — Client
+### Client
 
 ```bash
 cd apps/client
 npm install
 cp .env.example .env.local
+npm run dev
 ```
 
-`.env.local`:
+Client env:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+NEXT_PUBLIC_API_BASE_URL="http://localhost:4000"
 ```
 
-### 3 — Run full stack
+### Full Stack Launcher
 
 ```bash
 cd apps
 npm install
-cp .env.example .env   # API_PORT=4000, CLIENT_PORT=3000
+cp .env.example .env
 npm run dev
 ```
 
+Default ports from `apps/.env.example`:
+
 | Service | URL |
 |---|---|
-| Frontend | http://localhost:3000 |
-| API | http://localhost:4000 |
+| API | http://localhost:5001 |
+| Client | http://localhost:3003 |
+
+The launcher will pick the next available port when the default is busy, unless a port is explicitly set in `apps/.env`.
 
 ## Scripts
+
+### `apps`
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start API and client together |
+| `npm run dev:fullstack` | Alias for `npm run dev` |
+| `npm run typecheck` | Typecheck project scripts |
 
 ### `apps/api`
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start API with `tsx` (hot reload) |
-| `npm test` | Run test suite |
-| `npm run typecheck` | TypeScript type check |
-| `npm run build` | Bundle for Vercel (`prisma generate` + `esbuild`) |
+| `npm run dev` | Start the local API server |
+| `npm test` | Run API tests |
+| `npm run test:watch` | Run API tests in watch mode |
+| `npm run typecheck` | Typecheck API, tests, Prisma seed, and shared scripts |
+| `npm run build` | Bundle the Vercel serverless entry |
+| `npm run audio:download` | Run `apps/scripts/download-audio-backups.ts` |
 | `npm run prisma:generate` | Generate Prisma client |
-| `npm run prisma:migrate` | Run migrations (dev) |
-| `npm run prisma:deploy` | Apply migrations (production) |
-| `npm run prisma:seed` | Seed database from `data/data.json` |
+| `npm run prisma:migrate` | Run development migrations |
+| `npm run prisma:deploy` | Apply production migrations |
+| `npm run prisma:seed` | Seed the database |
 
 ### `apps/client`
 
 | Command | Description |
 |---|---|
 | `npm run dev` | Start Next.js dev server |
-| `npm run build` | Production build |
-| `npm run typecheck` | TypeScript type check |
+| `npm run build` | Build the client |
+| `npm run start` | Start the production Next.js server |
+| `npm test` | Run client tests |
+| `npm run typecheck` | Typecheck the client |
 
 ## Deployment
 
-The frontend and API are deployed separately.
+The API and client are deployed separately on Vercel.
 
-**API — Render (Web Service)**
+### API on Vercel
 
 | Field | Value |
 |---|---|
 | Root Directory | `apps/api` |
-| Build Command | `npm install && npx prisma generate` |
-| Start Command | `npx tsx src/index.ts` |
+| Build Command | `npm run build` |
+| Output | `api/index.js` generated by esbuild |
 
-Required environment variables: `DATABASE_URL`, `DIRECT_URL`, `CORS_ORIGIN` (Vercel frontend URL), `TRUST_PROXY=true`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`
+Required env vars:
 
-> The free tier sleeps after 15 minutes of inactivity — first request after idle takes ~20–30 s.
+```env
+DATABASE_URL=...
+DIRECT_URL=...
+CORS_ORIGIN=https://your-client.vercel.app
+TRUST_PROXY=true
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=60
+```
 
-**Client — Vercel**
+### Client on Vercel
 
-Standard Next.js deployment. Set Root Directory to `apps/client`.
+| Field | Value |
+|---|---|
+| Root Directory | `apps/client` |
+| Build Command | `npm run build` |
 
-Required environment variable: `NEXT_PUBLIC_API_BASE_URL` (Render API URL, Production environment)
+Required env var:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://your-api.vercel.app
+```
 
 ## Data
 
-The dataset is derived from the [MKDict project](https://github.com/mknaw/mkdict) and contains 36,800 entries. Of those, 36,204 include an audio URL pointing to pronunciation recordings.
+The dataset is derived from the MKDict project and contains about 36,800 entries. This project is non-commercial and intended for educational and language-learning use.
 
-This project is non-commercial. Data is used for educational and language-learning purposes.
+## Notes
 
-## Roadmap
-
-### v1.x — Data & polish
-
-- Continue improving and correcting the underlying lexical dataset
-- Refine search ranking and edge case handling
-
-### v2 — User platform
-
-- **User accounts** — authentication with session management and profile persistence
-- **Vocabulary lists** — create, organize, and review personal word collections
-- **Flashcard system** — spaced-repetition review built on top of saved lists
-- **Mobile application** — React Native app sharing the same API layer
-- **Offline support** — cached vocabulary lists accessible without internet
+- Generated build artifacts are ignored, including `.next/`, `*.tsbuildinfo`, local databases, and `apps/api/api/index.js`.
+- On Windows, Prisma generation can fail with `EPERM` if Node processes are still running. Stop local servers and retry.

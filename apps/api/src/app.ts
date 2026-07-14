@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import helmetModule from "helmet";
-import { searchHandler } from "./routes/search.js";
+import { searchHandler } from "./search/handler.js";
 import { getApiConfig, createCorsOptions, type ApiConfig } from "./config.js";
-import { createRateLimitMiddleware } from "./security.js";
+import { createRateLimitMiddleware } from "./middleware/rate-limit.js";
 import { logAndHandleError } from "./utils/error-handler.js";
 
 const helmet = helmetModule as unknown as () => express.RequestHandler;

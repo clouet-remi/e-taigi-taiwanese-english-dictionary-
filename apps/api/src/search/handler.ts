@@ -2,8 +2,8 @@ import { Prisma } from "@prisma/client";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import prisma from "../db.js";
-import { withResolvedAudioUrl } from "../audioUrl.js";
-import { detectMode, escapeLikePattern, normalizeEnglish } from "../search.js";
+import { withResolvedAudioUrl } from "../utils/audio-url.js";
+import { detectMode, escapeLikePattern, normalizeEnglish } from "../utils/search.js";
 import { logAndHandleError, handleError } from "../utils/error-handler.js";
 
 type SearchResult = {

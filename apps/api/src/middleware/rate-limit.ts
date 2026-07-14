@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { handleError } from "./utils/error-handler.js";
+import { handleError } from "../utils/error-handler.js";
 
 type RateLimitOptions = {
   enabled?: boolean;
