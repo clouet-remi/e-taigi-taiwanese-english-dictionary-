@@ -6,6 +6,7 @@
     "build": "prisma generate && esbuild src/handler.ts --bundle --platform=node --format=esm --outfile=api/index.js --external:@prisma/client",
     "dev": "tsx src/index.ts",
     "test": "node --import tsx --test test/all.test.ts",
+    "test:ci": "node --import tsx --test test/app.test.ts test/search-handler.test.ts",
     "test:watch": "node --import tsx --test --watch test/all.test.ts",
     "audio:download": "tsx ../scripts/download-audio-backups.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",

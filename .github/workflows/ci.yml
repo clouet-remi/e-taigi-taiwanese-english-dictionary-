@@ -1,0 +1,84 @@
+name: CI
+
+# Se lance avant fusion (PR), après fusion sur main, ou manuellement.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# La CI n'a besoin que de lire le dépôt : elle ne peut ni modifier le code ni créer de release.
+permissions:
+  contents: read
+
+# Annule une ancienne CI devenue inutile lorsqu'un nouveau commit arrive sur la même branche/PR.
+# Exemple : trois commits poussés rapidement sur une PR ne laissent tourner que le dernier.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # Réutilise le cache npm correspondant à ce lockfile : plus rapide, sans remplacer npm ci.
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      # Ces tests sont unitaires : les tests nécessitant la base Neon ne peuvent pas tourner sans secret.
+      - run: npm run test:ci
+      # Vérifie que le bundle serverless Vercel peut bien être produit.
+      - run: npm run build
+
+  client:
+    name: Client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/client/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # Vérifie aussi le build de production Next.js, pas seulement les tests.
+      - run: npm run build
+
+  scripts:
+    name: Scripts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+
+  quality-gate:
+    # Un unique statut à sélectionner dans la règle GitHub de protection de main.
+    name: Quality gate
+    needs: [api, client, scripts]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Tous les contrôles de qualité et les builds ont réussi."

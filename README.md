@@ -166,6 +166,7 @@ The launcher will pick the next available port when the default is busy, unless 
 |---|---|
 | `npm run dev` | Start the local API server |
 | `npm test` | Run API tests |
+| `npm run test:ci` | Run API tests that do not require a live database (used by CI) |
 | `npm run test:watch` | Run API tests in watch mode |
 | `npm run typecheck` | Typecheck API, tests, Prisma seed, and shared scripts |
 | `npm run build` | Bundle the Vercel serverless entry |
@@ -188,6 +189,14 @@ The launcher will pick the next available port when the default is busy, unless 
 ## Deployment
 
 The API and client are deployed separately on Vercel.
+
+## Continuous Integration
+
+GitHub Actions runs on every pull request targeting `main` and on each push to
+`main`. It installs dependencies from each lockfile, typechecks the API,
+client, and shared scripts, runs tests that do not require a live Neon database,
+and builds both deployable applications. Production deployments remain handled
+by the existing Vercel Git integration after changes are merged into `main`.
 
 ### API on Vercel
 
